@@ -3,19 +3,19 @@ name: GitHub Classroom Workflow
 on: workflow_dispatch
 
 env:
-  GHSECRET: ${{ secrets.GITHUB_TOKEN }}
   COPY-ISSUES: "true"
   GRADING: "true"
   MOODLE: "true"
 
 permissions:
   checks: write
+  issues: write
   actions: read
   contents: read
 
 jobs:
   setup:
-    if: ${{ contains(github.actor, 'classroom') }}
+    #if: ${{ contains(github.actor, 'classroom') }}
     uses: BZZ-Commons/workflows/.github/workflows/setup.yml@main
     with:
       SOURCE_REPO: templates-python/m319_lu04_a00_classroom
@@ -29,5 +29,4 @@ jobs:
     uses: BZZ-Commons/workflows/.github/workflows/grading.yml@main
     with:
       TARGET_REPO: ${{ github.repository }}
-    secrets:
-      GHSECRET: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
