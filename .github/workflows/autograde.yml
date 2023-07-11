@@ -1,10 +1,12 @@
 name: GitHub Classroom Workflow
 
-on: [push]
+on: workflow_dispatch
 
 env:
-  DEVOPS_DIR: devops
   GHSECRET: ${{ secrets.GITHUB_TOKEN }}
+  COPY-ISSUES: "true"
+  GRADING: "true"
+  MOODLE: "true"
 
 permissions:
   checks: write
@@ -12,35 +14,20 @@ permissions:
   contents: read
 
 jobs:
+  setup:
+    if: ${{ contains(github.actor, 'classroom') }}
+    uses: BZZ-Commons/workflows/.github/workflows/setup.yml@main
+    with:
+      SOURCE_REPO: templates-python/m319_template
+      TARGET_REPO: ${{ github.repository }}
+      ADD_LABELS: "false"
+    secrets:
+      GHSECRET: ${{ secrets.GITHUB_TOKEN }}
+
   grading:
-    # autograding an assignment in GitHub Classroom
-    # does not run for the first push by the classroom bot
     if: ${{ !contains(github.actor, 'classroom') }}
-    name: Autograding
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        # checkout the content of the repository
-      - uses: education/autograding@v1
-        # run the test cases in .github/classroom/autograding.json
-        id: autograding
-      - name: grade-moodle-assignment
-        # grade the assignment in Moodle, runs even after an error in autograding
-        if: always()
-        run: |
-          grade=${{ steps.autograding.outputs.Points }}
-          parts=(${grade//\// })
-          points="points=${parts[0]}"
-          user="user_name=${{ github.actor }}"
-          wsfunction="wsfunction=local_gradeassignments_update_grade"
-          
-          repofull=${{ github.repository }}
-          parts=(${repofull//\// })
-          reponame=${parts[1]}
-          template="${reponame/"-${{ github.actor }}"/""}"
-          assignment="assignment_name=$template"
-          
-          
-          wstoken="wstoken=${{ secrets.MOODLE_TOKEN }}"
-          url="${{ vars.MOODLE_URL}}?$wstoken&$wsfunction&$assignment&$user&$points"
-          curl $url
+    uses: BZZ-Commons/workflows/.github/workflows/grading.yml@main
+    with:
+      TARGET_REPO: ${{ github.repository }}
+    secrets:
+      GHSECRET: ${{ secrets.GITHUB_TOKEN }}
